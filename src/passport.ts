@@ -1,9 +1,13 @@
+import { PrismaClient } from "@prisma/client";
+
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 import passport from "passport";
 import dotenv from "dotenv";
-// import { db } from './db';
 
 dotenv.config();
+
+const prisma = new PrismaClient();
+
 const GOOGLE_CLIENT_ID =
   process.env.GOOGLE_CLIENT_ID || "your_google_client_id";
 const GOOGLE_CLIENT_SECRET =
@@ -23,41 +27,31 @@ export function initPassport() {
         clientSecret: GOOGLE_CLIENT_SECRET,
         callbackURL: "/auth/google/callback",
       },
-      async function (
-        accessToken: string,
-        refreshToken: string,
-        profile: any,
-        done: (error: any, user?: any) => void
-      ) {
-        console.log("profile = ", profile);
-        // const user = await db.user.upsert({
-        //   create: {
-        //     email: profile.emails[0].value,
-        //     name: profile.displayName,
-        //     provider: 'GOOGLE',
-        //   },
-        //   update: {
-        //     name: profile.displayName,
-        //   },
-        //   where: {
-        //     email: profile.emails[0].value,
-        //   },
-        // });
-
-        // console.log('user = ', user);
-
-        // done(null, user);
+      // @ts-ignore
+      async function (accessToken, refreshToken, profile, done) {
+        try {
+          console.log("profile = ", profile);
+          const user = await prisma.user.upsert({
+            where: { email: profile.emails[0].value },
+            update: { name: profile.displayName },
+            create: {
+              email: profile.emails[0].value,
+              name: profile.displayName,
+              provider: "GOOGLE",
+            },
+          });
+          done(null, user);
+        } catch (error) {
+          done(error);
+        }
       }
     )
   );
 
-  passport.serializeUser(function (user: any, cb) {
-    process.nextTick(function () {
-      return cb(null, {
-        id: user.id,
-        username: user.username,
-        picture: user.picture,
-      });
+  passport.serializeUser((user: any, cb) => {
+    process.nextTick(() => {
+      console.log("from serialize user = ", user);
+      return cb(null, user.id);
     });
   });
 
@@ -66,4 +60,29 @@ export function initPassport() {
       return cb(null, user);
     });
   });
+
+  // passport.deserializeUser(async (id, cb) => {
+  //   try {
+  //     const user = await prisma.user.findUnique({ where: { id: String(id) } });
+  //     cb(null, user);
+  //   } catch (error) {
+  //     cb(error);
+  //   }
+  // });
 }
+
+// passport.serializeUser(function (user: any, cb) {
+//   process.nextTick(function () {
+//     return cb(null, {
+//       id: user.id,
+//       username: user.username,
+//       picture: user.picture,
+//     });
+//   });
+// });
+
+// passport.deserializeUser(function (user: any, cb) {
+//   process.nextTick(function () {
+//     return cb(null, user);
+//   });
+// });
