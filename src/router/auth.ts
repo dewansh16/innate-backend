@@ -46,7 +46,7 @@ router.get("/logout", (req: Request, res: Response) => {
       res.status(500).json({ error: "Failed to log out" });
     } else {
       res.clearCookie("jwt");
-      res.redirect("http://localhost:3000/");
+      res.redirect(`${CLIENT_URL}`);
     }
   });
 });

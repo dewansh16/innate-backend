@@ -16,17 +16,19 @@ exports.SessionManager = exports.Session = void 0;
 const ws_1 = require("ws");
 const axios_1 = __importDefault(require("axios"));
 const schemas_1 = require("./validations/schemas");
+const client_1 = require("@prisma/client");
+const Prisma = new client_1.PrismaClient();
 class Session {
     constructor(clientSocket, sessionId) {
         this.id = sessionId; // Use the provided sessionId
         this.clientSocket = clientSocket;
         this.clientSocket.on("message", (data) => __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const message = data.toString();
             console.log(`Received message from client: ${message}`);
             let parsedMessage;
             try {
                 parsedMessage = schemas_1.WebSocketMessageSchema.parse(JSON.parse(message));
-                console.log(`Received message from client: ${message}`);
             }
             catch (error) {
                 console.error("Invalid message format:", error);
@@ -37,15 +39,40 @@ class Session {
                 return;
             }
             if (parsedMessage.type === "QUESTION") {
-                const prompt = JSON.stringify(parsedMessage.payload.message);
+                const prompt = JSON.stringify((_a = parsedMessage.payload) === null || _a === void 0 ? void 0 : _a.message);
+                const { sessionId, nextState, selectedComponent, userMessage, userMessageHistory, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, payload, } = parsedMessage;
                 try {
+                    // Save message to database using Prisma
+                    yield Prisma.message.create({
+                        data: {
+                            senderType: "client",
+                            sessionId: this.id,
+                            nextState,
+                            selectedComponent,
+                            userMessage,
+                            userMessageHistory,
+                            agentResponseMessage,
+                            insightModelStatus,
+                            refinedQueries,
+                            insightModel,
+                            type,
+                        },
+                    });
                     yield axios_1.default.post("http://localhost:9090/process", {
-                        prompt,
                         sessionId: this.id,
+                        nextState,
+                        selectedComponent,
+                        userMessage,
+                        userMessageHistory,
+                        agentResponseMessage,
+                        insightModelStatus,
+                        refinedQueries,
+                        insightModel,
+                        type,
                     });
                 }
                 catch (error) {
-                    console.error(`Error sending message to LLM: ${error}`);
+                    console.error(`Error sending message to LLM or saving to database: ${error}`);
                 }
             }
         }));

@@ -41,7 +41,7 @@ router.get("/logout", (req, res) => {
         }
         else {
             res.clearCookie("jwt");
-            res.redirect("http://localhost:3000/");
+            res.redirect(`${CLIENT_URL}`);
         }
     });
 });

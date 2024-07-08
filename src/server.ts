@@ -3,7 +3,10 @@ import { SessionManager } from "./sessionManager";
 import url from "url";
 import express from "express";
 import bodyParser from "body-parser";
-import { HttpRequestBodySchema } from "./validations/schemas";
+import {
+  HttpRequestBodySchema,
+  WebSocketMessageSchema,
+} from "./validations/schemas";
 import { initPassport } from "./passport";
 import dotenv from "dotenv";
 import session from "express-session";
@@ -43,6 +46,19 @@ app.use(
 
 app.use("/auth", authRoute);
 
+// Route to create and provide session ID
+app.get("/session", async (req, res) => {
+  try {
+    const session = await prisma.session.create({
+      data: {},
+    });
+    res.status(201).json({ sessionId: session.id });
+  } catch (error) {
+    console.error("Error creating session:", error);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+});
+
 wss.on("connection", function connection(ws, req) {
   //@ts-ignore
   const queryParams = url.parse(req.url, true).query;
@@ -59,20 +75,68 @@ wss.on("connection", function connection(ws, req) {
   sessionManager.addSession(ws, sessionId);
 });
 
-app.post("/message", (req, res) => {
+app.post("/message", async (req, res) => {
   let requestBody;
   try {
-    requestBody = HttpRequestBodySchema.parse(req.body);
+    requestBody = WebSocketMessageSchema.parse(req.body);
   } catch (error) {
     return res.status(400).json({ error: "Invalid request body format" });
   }
 
-  const { sessionId, message } = requestBody;
+  const {
+    sessionId,
+    nextState,
+    selectedComponent,
+    userMessage,
+    userMessageHistory,
+    agentResponseMessage,
+    insightModelStatus,
+    refinedQueries,
+    insightModel,
+    type,
+  } = requestBody;
+
   const session = sessionManager.getSession(sessionId);
   if (session && session.clientSocket.readyState === WebSocket.OPEN) {
     session.clientSocket.send(
-      JSON.stringify({ type: "ANSWER", payload: { message } })
+      JSON.stringify({
+        sessionId,
+        nextState,
+        selectedComponent,
+        userMessage,
+        userMessageHistory,
+        agentResponseMessage,
+        insightModelStatus,
+        refinedQueries,
+        insightModel,
+        type,
+      })
     );
+
+    console.log("reqestBody = ", requestBody);
+
+    try {
+      await prisma.message.create({
+        data: {
+          senderType: "agent",
+          sessionId,
+          nextState,
+          selectedComponent,
+          userMessage,
+          userMessageHistory,
+          agentResponseMessage,
+          insightModelStatus,
+          refinedQueries,
+          insightModel,
+          type,
+        },
+      });
+    } catch (error) {
+      console.error("Error saving message:", error);
+      res.status(500).json({ error: "Failed to save message" });
+      return;
+    }
+
     res.sendStatus(200);
   } else {
     res.sendStatus(404);

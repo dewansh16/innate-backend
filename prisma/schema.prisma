@@ -27,12 +27,26 @@ model Session {
   messages  Message[]
 }
 
+enum senderType {
+  client
+  agent
+}
+
 model Message {
-  id        String   @id @default(cuid())
-  sessionId String
-  type      String
-  payload   Json
-  createdAt DateTime @default(now())
+  id                   String     @id @default(cuid())
+  sessionId            String
+  nextState            String?
+  selectedComponent    String?
+  userMessage          String?
+  userMessageHistory   Json?
+  agentResponseMessage String?
+  insightModelStatus   String?
+  refinedQueries       Json?
+  insightModel         Json?
+  type                 String?
+  payload              Json?
+  createdAt            DateTime   @default(now())
+  senderType           senderType @default(client)
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

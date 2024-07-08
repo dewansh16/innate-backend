@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,6 +46,19 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 app.use("/auth", auth_1.default);
+// Route to create and provide session ID
+app.get("/session", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const session = yield prisma.session.create({
+            data: {},
+        });
+        res.status(201).json({ sessionId: session.id });
+    }
+    catch (error) {
+        console.error("Error creating session:", error);
+        res.status(500).json({ error: "Failed to create session" });
+    }
+}));
 wss.on("connection", function connection(ws, req) {
     //@ts-ignore
     const queryParams = url_1.default.parse(req.url, true).query;
@@ -49,24 +71,58 @@ wss.on("connection", function connection(ws, req) {
     });
     sessionManager.addSession(ws, sessionId);
 });
-app.post("/message", (req, res) => {
+app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let requestBody;
     try {
-        requestBody = schemas_1.HttpRequestBodySchema.parse(req.body);
+        requestBody = schemas_1.WebSocketMessageSchema.parse(req.body);
     }
     catch (error) {
         return res.status(400).json({ error: "Invalid request body format" });
     }
-    const { sessionId, message } = requestBody;
+    const { sessionId, nextState, selectedComponent, userMessage, userMessageHistory, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, } = requestBody;
     const session = sessionManager.getSession(sessionId);
     if (session && session.clientSocket.readyState === ws_1.WebSocket.OPEN) {
-        session.clientSocket.send(JSON.stringify({ type: "ANSWER", payload: { message } }));
+        session.clientSocket.send(JSON.stringify({
+            sessionId,
+            nextState,
+            selectedComponent,
+            userMessage,
+            userMessageHistory,
+            agentResponseMessage,
+            insightModelStatus,
+            refinedQueries,
+            insightModel,
+            type,
+        }));
+        console.log("reqestBody = ", requestBody);
+        try {
+            yield prisma.message.create({
+                data: {
+                    senderType: "agent",
+                    sessionId,
+                    nextState,
+                    selectedComponent,
+                    userMessage,
+                    userMessageHistory,
+                    agentResponseMessage,
+                    insightModelStatus,
+                    refinedQueries,
+                    insightModel,
+                    type,
+                },
+            });
+        }
+        catch (error) {
+            console.error("Error saving message:", error);
+            res.status(500).json({ error: "Failed to save message" });
+            return;
+        }
         res.sendStatus(200);
     }
     else {
         res.sendStatus(404);
     }
-});
+}));
 app.get("/protected", (req, res) => {
     if (req.isAuthenticated()) {
         res.status(200).json({ message: "This is a protected route" });

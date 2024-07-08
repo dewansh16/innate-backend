@@ -1,6 +1,9 @@
 import { WebSocket } from "ws";
 import axios from "axios";
 import { WebSocketMessageSchema } from "./validations/schemas";
+import { PrismaClient } from "@prisma/client";
+
+const Prisma = new PrismaClient();
 
 export class Session {
   public id: string;
@@ -18,7 +21,6 @@ export class Session {
 
       try {
         parsedMessage = WebSocketMessageSchema.parse(JSON.parse(message));
-        console.log(`Received message from client: ${message}`);
       } catch (error) {
         console.error("Invalid message format:", error);
         this.clientSocket.send(
@@ -31,14 +33,55 @@ export class Session {
       }
 
       if (parsedMessage.type === "QUESTION") {
-        const prompt = JSON.stringify(parsedMessage.payload.message);
+        const prompt = JSON.stringify(parsedMessage.payload?.message);
+        const {
+          sessionId,
+          nextState,
+          selectedComponent,
+          userMessage,
+          userMessageHistory,
+          agentResponseMessage,
+          insightModelStatus,
+          refinedQueries,
+          insightModel,
+          type,
+          payload,
+        } = parsedMessage;
+
         try {
+          // Save message to database using Prisma
+          await Prisma.message.create({
+            data: {
+              senderType: "client",
+              sessionId: this.id,
+              nextState,
+              selectedComponent,
+              userMessage,
+              userMessageHistory,
+              agentResponseMessage,
+              insightModelStatus,
+              refinedQueries,
+              insightModel,
+              type,
+            },
+          });
+
           await axios.post("http://localhost:9090/process", {
-            prompt,
             sessionId: this.id,
+            nextState,
+            selectedComponent,
+            userMessage,
+            userMessageHistory,
+            agentResponseMessage,
+            insightModelStatus,
+            refinedQueries,
+            insightModel,
+            type,
           });
         } catch (error) {
-          console.error(`Error sending message to LLM: ${error}`);
+          console.error(
+            `Error sending message to LLM or saving to database: ${error}`
+          );
         }
       }
     });
@@ -56,6 +99,7 @@ export class Session {
     return `Process this prompt: ${message}`;
   }
 }
+
 export class SessionManager {
   private static instance: SessionManager;
   private sessions: Map<string, Session>;
@@ -88,6 +132,7 @@ export class SessionManager {
     }
     console.log("sessions map = ", this.sessions);
   }
+
   public getSession(sessionId: string): Session | undefined {
     return this.sessions.get(sessionId);
   }
