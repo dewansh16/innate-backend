@@ -5,17 +5,15 @@ export const WebSocketMessageSchema = z.object({
   nextState: z.string().optional(),
   selectedComponent: z.string().optional(),
   userMessage: z.string().optional(),
-  userMessageHistory: z.string().optional(),
   agentResponseMessage: z.string().optional(),
   insightModelStatus: z.string().optional(),
   refinedQueries: z.string().optional(),
   insightModel: z.string().optional(),
   type: z.string().optional(),
-  payload: z
-    .object({
-      message: z.string().optional(),
-    })
-    .optional(),
+  data: z.string().optional(),
+  context: z.string().optional(),
+  suggestedLabels: z.string().optional(),
+  specificityScore: z.string().optional(),
 });
 
 export const HttpRequestBodySchema = z.object({

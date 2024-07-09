@@ -3,10 +3,7 @@ import { SessionManager } from "./sessionManager";
 import url from "url";
 import express from "express";
 import bodyParser from "body-parser";
-import {
-  HttpRequestBodySchema,
-  WebSocketMessageSchema,
-} from "./validations/schemas";
+import { WebSocketMessageSchema } from "./validations/schemas";
 import { initPassport } from "./passport";
 import dotenv from "dotenv";
 import session from "express-session";
@@ -76,9 +73,30 @@ wss.on("connection", function connection(ws, req) {
 });
 
 app.post("/message", async (req, res) => {
+  console.log("req.body = ", req.body);
+  let JSONrefinedQueries = JSON.stringify(req.body.refinedQueries);
+  // console.log("JSONrefinedQueries = ", JSONrefinedQueries);
+  let JSONinsightModel = JSON.stringify(req.body.insightModel);
+  // console.log("JSONinsightModel = ", JSONinsightModel);
+  let JSONData = JSON.stringify(req.body.data);
+  // console.log("JSONData = ", JSONData);
+  let JSONContext = JSON.stringify(req.body.context);
+  // console.log("JSONContext = ", JSONContext);
+  let JSONSuggestedLabels = JSON.stringify(req.body.suggestedLabels);
+  // console.log("JSONSuggestedLabels = ", JSONSuggestedLabels);
+  let receivedData = {
+    ...req.body,
+    refinedQueries: JSONrefinedQueries,
+    insightModel: JSONinsightModel,
+    data: JSONData,
+    context: JSONContext,
+    suggestedLabels: JSONSuggestedLabels,
+  };
+  console.log("receivedData = ", receivedData);
   let requestBody;
   try {
-    requestBody = WebSocketMessageSchema.parse(req.body);
+    requestBody = WebSocketMessageSchema.parse(receivedData);
+    console.log("Request body parsed successfully:", requestBody);
   } catch (error) {
     return res.status(400).json({ error: "Invalid request body format" });
   }
@@ -88,12 +106,15 @@ app.post("/message", async (req, res) => {
     nextState,
     selectedComponent,
     userMessage,
-    userMessageHistory,
     agentResponseMessage,
     insightModelStatus,
     refinedQueries,
     insightModel,
     type,
+    data,
+    context,
+    suggestedLabels,
+    specificityScore,
   } = requestBody;
 
   const session = sessionManager.getSession(sessionId);
@@ -101,15 +122,18 @@ app.post("/message", async (req, res) => {
     session.clientSocket.send(
       JSON.stringify({
         sessionId,
-        nextState,
-        selectedComponent,
-        userMessage,
-        userMessageHistory,
-        agentResponseMessage,
-        insightModelStatus,
-        refinedQueries,
-        insightModel,
-        type,
+        nextState: nextState || " ",
+        selectedComponent: selectedComponent || "",
+        userMessage: userMessage || "",
+        agentResponseMessage: agentResponseMessage || "",
+        insightModelStatus: insightModelStatus || "",
+        refinedQueries: refinedQueries || "",
+        insightModel: insightModel || "",
+        type: type || "ANSWER",
+        data: data || "",
+        context: context || "",
+        suggestedLabels: suggestedLabels || "",
+        specificityScore: specificityScore || "",
       })
     );
 
@@ -120,15 +144,18 @@ app.post("/message", async (req, res) => {
         data: {
           senderType: "agent",
           sessionId,
-          nextState,
-          selectedComponent,
-          userMessage,
-          userMessageHistory,
-          agentResponseMessage,
-          insightModelStatus,
-          refinedQueries,
-          insightModel,
-          type,
+          nextState: nextState || " ",
+          selectedComponent: selectedComponent || "",
+          userMessage: userMessage || "",
+          agentResponseMessage: agentResponseMessage || "",
+          insightModelStatus: insightModelStatus || "",
+          refinedQueries: refinedQueries || "",
+          insightModel: insightModel || "",
+          type: type || "ANSWER",
+          data: data || "",
+          context: context || "",
+          suggestedLabels: suggestedLabels || "",
+          specificityScore: specificityScore || "",
         },
       });
     } catch (error) {
@@ -137,9 +164,9 @@ app.post("/message", async (req, res) => {
       return;
     }
 
-    res.sendStatus(200);
+    res.status(200).json({ message: "Success" });
   } else {
-    res.sendStatus(404);
+    res.sendStatus(404).json({ message: "server error." });
   }
 });
 

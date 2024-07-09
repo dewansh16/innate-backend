@@ -38,15 +38,17 @@ model Message {
   nextState            String?
   selectedComponent    String?
   userMessage          String?
-  userMessageHistory   Json?
   agentResponseMessage String?
   insightModelStatus   String?
   refinedQueries       Json?
   insightModel         Json?
   type                 String?
-  payload              Json?
   createdAt            DateTime   @default(now())
   senderType           senderType @default(client)
+  data                 Json?
+  context              Json?
+  suggestedLabels      Json?
+  specificityScore     String?
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

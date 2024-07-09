@@ -23,7 +23,6 @@ class Session {
         this.id = sessionId; // Use the provided sessionId
         this.clientSocket = clientSocket;
         this.clientSocket.on("message", (data) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
             const message = data.toString();
             console.log(`Received message from client: ${message}`);
             let parsedMessage;
@@ -34,13 +33,12 @@ class Session {
                 console.error("Invalid message format:", error);
                 this.clientSocket.send(JSON.stringify({
                     type: "ERROR",
-                    payload: { message: "Invalid message format" },
+                    agentResponseMessage: "Invalid message format",
                 }));
                 return;
             }
             if (parsedMessage.type === "QUESTION") {
-                const prompt = JSON.stringify((_a = parsedMessage.payload) === null || _a === void 0 ? void 0 : _a.message);
-                const { sessionId, nextState, selectedComponent, userMessage, userMessageHistory, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, payload, } = parsedMessage;
+                const { sessionId, nextState, selectedComponent, userMessage, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, data, context, suggestedLabels, specificityScore, } = parsedMessage;
                 try {
                     // Save message to database using Prisma
                     yield Prisma.message.create({
@@ -50,12 +48,15 @@ class Session {
                             nextState,
                             selectedComponent,
                             userMessage,
-                            userMessageHistory,
                             agentResponseMessage,
                             insightModelStatus,
                             refinedQueries,
                             insightModel,
                             type,
+                            data,
+                            context,
+                            suggestedLabels,
+                            specificityScore,
                         },
                     });
                     yield axios_1.default.post("http://localhost:9090/process", {
@@ -63,12 +64,15 @@ class Session {
                         nextState,
                         selectedComponent,
                         userMessage,
-                        userMessageHistory,
                         agentResponseMessage,
                         insightModelStatus,
                         refinedQueries,
                         insightModel,
                         type,
+                        data,
+                        context,
+                        suggestedLabels,
+                        specificityScore,
                     });
                 }
                 catch (error) {

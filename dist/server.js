@@ -72,27 +72,44 @@ wss.on("connection", function connection(ws, req) {
     sessionManager.addSession(ws, sessionId);
 });
 app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("req.body = ", req.body);
+    let JSONrefinedQueries = JSON.stringify(req.body.refinedQueries);
+    // console.log("JSONrefinedQueries = ", JSONrefinedQueries);
+    let JSONinsightModel = JSON.stringify(req.body.insightModel);
+    // console.log("JSONinsightModel = ", JSONinsightModel);
+    let JSONData = JSON.stringify(req.body.data);
+    // console.log("JSONData = ", JSONData);
+    let JSONContext = JSON.stringify(req.body.context);
+    // console.log("JSONContext = ", JSONContext);
+    let JSONSuggestedLabels = JSON.stringify(req.body.suggestedLabels);
+    // console.log("JSONSuggestedLabels = ", JSONSuggestedLabels);
+    let receivedData = Object.assign(Object.assign({}, req.body), { refinedQueries: JSONrefinedQueries, insightModel: JSONinsightModel, data: JSONData, context: JSONContext, suggestedLabels: JSONSuggestedLabels });
+    console.log("receivedData = ", receivedData);
     let requestBody;
     try {
-        requestBody = schemas_1.WebSocketMessageSchema.parse(req.body);
+        requestBody = schemas_1.WebSocketMessageSchema.parse(receivedData);
+        console.log("Request body parsed successfully:", requestBody);
     }
     catch (error) {
         return res.status(400).json({ error: "Invalid request body format" });
     }
-    const { sessionId, nextState, selectedComponent, userMessage, userMessageHistory, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, } = requestBody;
+    const { sessionId, nextState, selectedComponent, userMessage, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, data, context, suggestedLabels, specificityScore, } = requestBody;
     const session = sessionManager.getSession(sessionId);
     if (session && session.clientSocket.readyState === ws_1.WebSocket.OPEN) {
         session.clientSocket.send(JSON.stringify({
             sessionId,
-            nextState,
-            selectedComponent,
-            userMessage,
-            userMessageHistory,
-            agentResponseMessage,
-            insightModelStatus,
-            refinedQueries,
-            insightModel,
-            type,
+            nextState: nextState || " ",
+            selectedComponent: selectedComponent || "",
+            userMessage: userMessage || "",
+            agentResponseMessage: agentResponseMessage || "",
+            insightModelStatus: insightModelStatus || "",
+            refinedQueries: refinedQueries || "",
+            insightModel: insightModel || "",
+            type: type || "ANSWER",
+            data: data || "",
+            context: context || "",
+            suggestedLabels: suggestedLabels || "",
+            specificityScore: specificityScore || "",
         }));
         console.log("reqestBody = ", requestBody);
         try {
@@ -100,15 +117,18 @@ app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 data: {
                     senderType: "agent",
                     sessionId,
-                    nextState,
-                    selectedComponent,
-                    userMessage,
-                    userMessageHistory,
-                    agentResponseMessage,
-                    insightModelStatus,
-                    refinedQueries,
-                    insightModel,
-                    type,
+                    nextState: nextState || " ",
+                    selectedComponent: selectedComponent || "",
+                    userMessage: userMessage || "",
+                    agentResponseMessage: agentResponseMessage || "",
+                    insightModelStatus: insightModelStatus || "",
+                    refinedQueries: refinedQueries || "",
+                    insightModel: insightModel || "",
+                    type: type || "ANSWER",
+                    data: data || "",
+                    context: context || "",
+                    suggestedLabels: suggestedLabels || "",
+                    specificityScore: specificityScore || "",
                 },
             });
         }
@@ -117,10 +137,10 @@ app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             res.status(500).json({ error: "Failed to save message" });
             return;
         }
-        res.sendStatus(200);
+        res.status(200).json({ message: "Success" });
     }
     else {
-        res.sendStatus(404);
+        res.sendStatus(404).json({ message: "server error." });
     }
 }));
 app.get("/protected", (req, res) => {

@@ -26,26 +26,27 @@ export class Session {
         this.clientSocket.send(
           JSON.stringify({
             type: "ERROR",
-            payload: { message: "Invalid message format" },
+            agentResponseMessage: "Invalid message format",
           })
         );
         return;
       }
 
       if (parsedMessage.type === "QUESTION") {
-        const prompt = JSON.stringify(parsedMessage.payload?.message);
         const {
           sessionId,
           nextState,
           selectedComponent,
           userMessage,
-          userMessageHistory,
           agentResponseMessage,
           insightModelStatus,
           refinedQueries,
           insightModel,
           type,
-          payload,
+          data,
+          context,
+          suggestedLabels,
+          specificityScore,
         } = parsedMessage;
 
         try {
@@ -57,12 +58,15 @@ export class Session {
               nextState,
               selectedComponent,
               userMessage,
-              userMessageHistory,
               agentResponseMessage,
               insightModelStatus,
               refinedQueries,
               insightModel,
               type,
+              data,
+              context,
+              suggestedLabels,
+              specificityScore,
             },
           });
 
@@ -71,12 +75,15 @@ export class Session {
             nextState,
             selectedComponent,
             userMessage,
-            userMessageHistory,
             agentResponseMessage,
             insightModelStatus,
             refinedQueries,
             insightModel,
             type,
+            data,
+            context,
+            suggestedLabels,
+            specificityScore,
           });
         } catch (error) {
           console.error(
