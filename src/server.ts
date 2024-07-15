@@ -28,14 +28,14 @@ app.use(
     cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
   })
 );
+
+initPassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
-initPassport();
-
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:3000",
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
   })

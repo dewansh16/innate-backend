@@ -37,6 +37,7 @@ export function initPassport() {
             create: {
               email: profile.emails[0].value,
               name: profile.displayName,
+              image: profile.photos[0].value,
               provider: "GOOGLE",
             },
           });

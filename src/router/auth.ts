@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 // import { db } from "../db";
 const router = Router();
 
@@ -10,6 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 interface User {
   id: string;
 }
+
+const prisma = new PrismaClient();
 
 // router.get("/refresh", async (req: Request, res: Response) => {
 //   if (req.user) {
@@ -34,6 +37,25 @@ interface User {
 //     res.status(401).json({ success: false, message: "Unauthorized" });
 //   }
 // });
+
+router.get("/self", async (req: Request, res: Response) => {
+  if (req.user) {
+    const user = req.user as User;
+
+    const userData = await prisma.user.findFirst({
+      where: {
+        id: user.id,
+      },
+    });
+
+    res.status(200).json({
+      id: user.id,
+      ...userData,
+    });
+  } else {
+    res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+});
 
 router.get("/login/failed", (req: Request, res: Response) => {
   res.status(401).json({ success: false, message: "failure" });

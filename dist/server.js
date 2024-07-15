@@ -37,11 +37,11 @@ app.use((0, express_session_1.default)({
     saveUninitialized: false,
     cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
 }));
+(0, passport_1.initPassport)();
 app.use(passport_2.default.initialize());
 app.use(passport_2.default.session());
-(0, passport_1.initPassport)();
 app.use((0, cors_1.default)({
-    origin: "*",
+    origin: "http://localhost:3000",
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
 }));
