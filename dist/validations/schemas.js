@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HttpRequestBodySchema = exports.WebSocketMessageSchema = void 0;
+exports.triggerPipelineSchema = exports.HttpRequestBodySchema = exports.WebSocketMessageSchema = void 0;
 const zod_1 = require("zod");
 exports.WebSocketMessageSchema = zod_1.z.object({
     sessionId: zod_1.z.string(),
@@ -20,4 +20,7 @@ exports.WebSocketMessageSchema = zod_1.z.object({
 exports.HttpRequestBodySchema = zod_1.z.object({
     sessionId: zod_1.z.string(),
     message: zod_1.z.string(),
+});
+exports.triggerPipelineSchema = zod_1.z.object({
+    projectConfig: zod_1.z.string(),
 });

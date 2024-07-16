@@ -23,6 +23,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_2 = __importDefault(require("passport"));
 const auth_1 = __importDefault(require("./router/auth"));
+const pipeline_1 = __importDefault(require("./router/pipeline"));
 const client_1 = require("@prisma/client");
 const cors_1 = __importDefault(require("cors"));
 dotenv_1.default.config();
@@ -46,17 +47,51 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 app.use("/auth", auth_1.default);
+app.use("/pipeline", pipeline_1.default);
 // Route to create and provide session ID
-app.get("/session", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/session/:userId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
     try {
         const session = yield prisma.session.create({
-            data: {},
+            data: {
+                userId,
+            },
         });
         res.status(201).json({ sessionId: session.id });
     }
     catch (error) {
         console.error("Error creating session:", error);
         res.status(500).json({ error: "Failed to create session" });
+    }
+}));
+app.get("/session/all/:userId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    try {
+        const session = yield prisma.session.findMany({
+            where: {
+                userId,
+            },
+        });
+        res.status(201).json({ data: session });
+    }
+    catch (error) {
+        console.error("Error creating session:", error);
+        res.status(500).json({ error: "Failed to create session" });
+    }
+}));
+app.get("/messages/:sessionId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { sessionId } = req.params;
+    try {
+        const messages = yield prisma.message.findMany({
+            where: {
+                sessionId,
+            },
+        });
+        res.status(201).json({ data: messages });
+    }
+    catch (error) {
+        console.error("Error fetching session:", error);
+        res.status(500).json({ error: "Failed to fetch messages" });
     }
 }));
 wss.on("connection", function connection(ws, req) {
@@ -84,7 +119,7 @@ app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* (
     let JSONSuggestedLabels = JSON.stringify(req.body.suggestedLabels);
     // console.log("JSONSuggestedLabels = ", JSONSuggestedLabels);
     let receivedData = Object.assign(Object.assign({}, req.body), { refinedQueries: JSONrefinedQueries, insightModel: JSONinsightModel, data: JSONData, context: JSONContext, suggestedLabels: JSONSuggestedLabels });
-    console.log("receivedData = ", receivedData);
+    // console.log("receivedData = ", receivedData);
     let requestBody;
     try {
         requestBody = schemas_1.WebSocketMessageSchema.parse(receivedData);
@@ -95,6 +130,7 @@ app.post("/message", (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
     const { sessionId, nextState, selectedComponent, userMessage, agentResponseMessage, insightModelStatus, refinedQueries, insightModel, type, data, context, suggestedLabels, specificityScore, } = requestBody;
     const session = sessionManager.getSession(sessionId);
+    // console.log("session = ", session);
     if (session && session.clientSocket.readyState === ws_1.WebSocket.OPEN) {
         session.clientSocket.send(JSON.stringify({
             sessionId,

@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 // import { db } from "../db";
 const router = Router();
 
-const CLIENT_URL = process.env.AUTH_REDIRECT_URL ?? "http://localhost:3000/";
+const CLIENT_URL = process.env.AUTH_REDIRECT_URL || "http://localhost:3000/";
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
 interface User {

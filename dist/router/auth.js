@@ -11,14 +11,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const passport_1 = __importDefault(require("passport"));
 const client_1 = require("@prisma/client");
 // import { db } from "../db";
 const router = (0, express_1.Router)();
-const CLIENT_URL = (_a = process.env.AUTH_REDIRECT_URL) !== null && _a !== void 0 ? _a : "http://localhost:3000/";
+const CLIENT_URL = process.env.AUTH_REDIRECT_URL || "http://localhost:3000/";
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 const prisma = new client_1.PrismaClient();
 // router.get("/refresh", async (req: Request, res: Response) => {

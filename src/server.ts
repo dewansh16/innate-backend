@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import session from "express-session";
 import passport from "passport";
 import authRoute from "./router/auth";
+import pipelineRoute from "./router/pipeline";
 import { PrismaClient } from "@prisma/client";
 import cors from "cors";
 
@@ -42,17 +43,52 @@ app.use(
 );
 
 app.use("/auth", authRoute);
+app.use("/pipeline", pipelineRoute);
 
 // Route to create and provide session ID
-app.get("/session", async (req, res) => {
+app.get("/session/:userId", async (req, res) => {
+  const { userId } = req.params;
   try {
     const session = await prisma.session.create({
-      data: {},
+      data: {
+        userId,
+      },
     });
     res.status(201).json({ sessionId: session.id });
   } catch (error) {
     console.error("Error creating session:", error);
     res.status(500).json({ error: "Failed to create session" });
+  }
+});
+
+app.get("/session/all/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const session = await prisma.session.findMany({
+      where: {
+        userId,
+      },
+    });
+    res.status(201).json({ data: session });
+  } catch (error) {
+    console.error("Error creating session:", error);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+});
+
+app.get("/messages/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const messages = await prisma.message.findMany({
+      where: {
+        sessionId,
+      },
+    });
+    res.status(201).json({ data: messages });
+  } catch (error) {
+    console.error("Error fetching session:", error);
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
 
@@ -92,7 +128,7 @@ app.post("/message", async (req, res) => {
     context: JSONContext,
     suggestedLabels: JSONSuggestedLabels,
   };
-  console.log("receivedData = ", receivedData);
+  // console.log("receivedData = ", receivedData);
   let requestBody;
   try {
     requestBody = WebSocketMessageSchema.parse(receivedData);
@@ -118,6 +154,7 @@ app.post("/message", async (req, res) => {
   } = requestBody;
 
   const session = sessionManager.getSession(sessionId);
+  // console.log("session = ", session);
   if (session && session.clientSocket.readyState === WebSocket.OPEN) {
     session.clientSocket.send(
       JSON.stringify({

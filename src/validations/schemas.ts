@@ -20,3 +20,7 @@ export const HttpRequestBodySchema = z.object({
   sessionId: z.string(),
   message: z.string(),
 });
+
+export const triggerPipelineSchema = z.object({
+  projectConfig: z.string(),
+});
