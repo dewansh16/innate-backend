@@ -56,3 +56,9 @@ model Message {
 
   @@index([sessionId])
 }
+
+model Charts {
+  id     String  @id @default(cuid())
+  data   Json?
+  userId String?
+}

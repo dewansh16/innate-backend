@@ -10,6 +10,7 @@ import session from "express-session";
 import passport from "passport";
 import authRoute from "./router/auth";
 import pipelineRoute from "./router/pipeline";
+import chartRoute from "./router/charts";
 import { PrismaClient } from "@prisma/client";
 import cors from "cors";
 
@@ -45,6 +46,7 @@ app.use(
 
 app.use("/auth", authRoute);
 app.use("/pipeline", pipelineRoute);
+app.use("/chart", chartRoute);
 
 // Route to create and provide session ID
 app.get("/session/:userId", async (req, res) => {

@@ -24,3 +24,8 @@ export const HttpRequestBodySchema = z.object({
 export const triggerPipelineSchema = z.object({
   projectConfig: z.string(),
 });
+
+export const graphSchema = z.object({
+  userId: z.string(),
+  data: z.string(),
+});

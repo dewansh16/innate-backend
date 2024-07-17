@@ -24,6 +24,7 @@ const express_session_1 = __importDefault(require("express-session"));
 const passport_2 = __importDefault(require("passport"));
 const auth_1 = __importDefault(require("./router/auth"));
 const pipeline_1 = __importDefault(require("./router/pipeline"));
+const charts_1 = __importDefault(require("./router/charts"));
 const client_1 = require("@prisma/client");
 const cors_1 = __importDefault(require("cors"));
 dotenv_1.default.config();
@@ -42,12 +43,14 @@ app.use((0, express_session_1.default)({
 app.use(passport_2.default.initialize());
 app.use(passport_2.default.session());
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3000",
+    // origin: "http://localhost:3000,http://localhost:8080,http://localhost:5000",
+    origin: "*",
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
 }));
 app.use("/auth", auth_1.default);
 app.use("/pipeline", pipeline_1.default);
+app.use("/chart", charts_1.default);
 // Route to create and provide session ID
 app.get("/session/:userId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
